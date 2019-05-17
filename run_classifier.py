@@ -203,6 +203,68 @@ class DataProcessor(object):
         lines.append(line)
       return lines
 
+class StegProcessor(DataProcessor):
+    '''
+    information security competition
+    steg analysis of description
+    '''
+    def _read_csv(self,data_dir,file_name):
+        with tf.gfile.Open(os.path.join(data_dir,file_name),"r") as f:
+            reader = csv.reader(f,delimiter=",",quotechar=None)
+            lines= []
+            for line in reader:
+                # print(line)
+                lines.append(line)
+        return lines
+
+
+    def get_train_examples(self, data_dir):
+        lines = self._read_csv(data_dir,"train.csv")
+
+        examples = []
+        for (i,line) in enumerate(lines):
+            guid = "train-{}".format(i)
+            name = tokenization.convert_to_unicode(line[0])
+            descrip = tokenization.convert_to_unicode(line[1])
+            label = tokenization.convert_to_unicode(line[2])
+            examples.append(
+                InputExample(guid=guid,text_a=descrip,label=label)
+            )
+        return examples
+
+    def get_dev_examples(self, data_dir):
+        lines = self._read_csv(data_dir, "dev.csv")
+
+        examples = []
+        for (i, line) in enumerate(lines):
+            guid = "dev-{}".format(i)
+            name = tokenization.convert_to_unicode(line[0])
+            descrip = tokenization.convert_to_unicode(line[1])
+            label = tokenization.convert_to_unicode(line[2])
+            examples.append(
+                InputExample(guid=guid, text_a=descrip, label=label)
+            )
+        return examples
+
+    def get_test_examples(self, data_dir):
+        lines = self._read_csv(data_dir, "test.csv")
+
+        examples = []
+        for (i, line) in enumerate(lines):
+            guid = "test-{}".format(i)
+            name = tokenization.convert_to_unicode(line[0])
+            descrip = tokenization.convert_to_unicode(line[1])
+            label = tokenization.convert_to_unicode(line[2])
+            examples.append(
+                InputExample(guid=guid, text_a=descrip, label=label)
+            )
+        return examples
+
+    def get_labels(self):
+        return ["0","1"]
+
+
+
 
 class XnliProcessor(DataProcessor):
   """Processor for the XNLI data set."""
@@ -683,6 +745,10 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
       def metric_fn(per_example_loss, label_ids, logits, is_real_example):
         predictions = tf.argmax(logits, axis=-1, output_type=tf.int32)
+        # with tf.Session() as sess:
+        #     with open("predict.txt","w") as f:
+        #         f.write("outcome:\n")
+        #         f.write(str(predictions.eval(session=sess)))
         accuracy = tf.metrics.accuracy(
             labels=label_ids, predictions=predictions, weights=is_real_example)
         loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
@@ -788,6 +854,7 @@ def main(_):
       "mnli": MnliProcessor,
       "mrpc": MrpcProcessor,
       "xnli": XnliProcessor,
+      "steg": StegProcessor
   }
 
   tokenization.validate_case_matches_checkpoint(FLAGS.do_lower_case,
@@ -877,7 +944,9 @@ def main(_):
         seq_length=FLAGS.max_seq_length,
         is_training=True,
         drop_remainder=True)
-    estimator.train(input_fn=train_input_fn, max_steps=num_train_steps)
+    tensors_to_log = {"train loss":"loss/Mean:0"}
+    logging_hook = tf.train.LoggingTensorHook(tensors = tensors_to_log,every_n_iter=100)
+    estimator.train(input_fn=train_input_fn, hooks=[logging_hook],max_steps=num_train_steps)
 
   if FLAGS.do_eval:
     eval_examples = processor.get_dev_examples(FLAGS.data_dir)

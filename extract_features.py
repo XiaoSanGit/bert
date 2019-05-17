@@ -38,7 +38,7 @@ flags.DEFINE_string("output_file", None, "")
 flags.DEFINE_string("layers", "-1,-2,-3,-4", "")
 
 flags.DEFINE_string(
-    "bert_config_file", None,
+    "bert_config_file", "./model/uncased_L-12_H-768_A-12/bert_config.json",
     "The config json file corresponding to the pre-trained BERT model. "
     "This specifies the model architecture.")
 
@@ -357,7 +357,7 @@ def main(_):
           num_shards=FLAGS.num_tpu_cores,
           per_host_input_for_training=is_per_host))
 
-  examples = read_examples(FLAGS.input_file)
+  examples = read_examples(FLAGS.input_file)#TODO rewrite
 
   features = convert_examples_to_features(
       examples=examples, seq_length=FLAGS.max_seq_length, tokenizer=tokenizer)
@@ -395,7 +395,7 @@ def main(_):
       for (i, token) in enumerate(feature.tokens):
         all_layers = []
         for (j, layer_index) in enumerate(layer_indexes):
-          layer_output = result["layer_output_%d" % j]
+          layer_output = result["layer_output_%d" % j]#TODO what we want
           layers = collections.OrderedDict()
           layers["index"] = layer_index
           layers["values"] = [
