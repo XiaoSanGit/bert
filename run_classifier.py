@@ -119,6 +119,10 @@ tf.flags.DEFINE_string(
 
 tf.flags.DEFINE_string("master", None, "[Optional] TensorFlow master URL.")
 
+flags.DEFINE_integer("text_mode",2,"The input text you want, title(2) \
+                                         or tname+title(1) or view+title(3) or both(4)")
+
+
 flags.DEFINE_integer(
     "num_tpu_cores", 8,
     "Only used if `use_tpu` is True. Total number of TPU cores to use.")
@@ -203,65 +207,84 @@ class DataProcessor(object):
         lines.append(line)
       return lines
 
-class StegProcessor(DataProcessor):
-    '''
-    information security competition
-    steg analysis of description
-    '''
-    def _read_csv(self,data_dir,file_name):
-        with tf.gfile.Open(os.path.join(data_dir,file_name),"r") as f:
-            reader = csv.reader(f,delimiter=",",quotechar=None)
-            lines= []
-            for line in reader:
-                # print(line)
-                lines.append(line)
-        return lines
+  @classmethod
+  def _read_csv(cls, input_file, quotechar=None):
+    """Reads a tab separated value file."""
+    with tf.gfile.Open(input_file, "r") as f:
+      reader = csv.reader(f, delimiter=",", quotechar=quotechar)
+      lines = []
+      flag = True
+      for line in reader:
+        if flag == True:
+            flag = False
+            continue
+        lines.append(line)
+      return lines
 
 
-    def get_train_examples(self, data_dir):
-        lines = self._read_csv(data_dir,"train.csv")
 
-        examples = []
-        for (i,line) in enumerate(lines):
-            guid = "train-{}".format(i)
-            name = tokenization.convert_to_unicode(line[0])
-            descrip = tokenization.convert_to_unicode(line[1])
-            label = tokenization.convert_to_unicode(line[2])
-            examples.append(
-                InputExample(guid=guid,text_a=descrip,label=label)
-            )
-        return examples
 
-    def get_dev_examples(self, data_dir):
-        lines = self._read_csv(data_dir, "dev.csv")
 
-        examples = []
-        for (i, line) in enumerate(lines):
-            guid = "dev-{}".format(i)
-            name = tokenization.convert_to_unicode(line[0])
-            descrip = tokenization.convert_to_unicode(line[1])
-            label = tokenization.convert_to_unicode(line[2])
-            examples.append(
-                InputExample(guid=guid, text_a=descrip, label=label)
-            )
-        return examples
 
-    def get_test_examples(self, data_dir):
-        lines = self._read_csv(data_dir, "test.csv")
-
-        examples = []
-        for (i, line) in enumerate(lines):
-            guid = "test-{}".format(i)
-            name = tokenization.convert_to_unicode(line[0])
-            descrip = tokenization.convert_to_unicode(line[1])
-            label = tokenization.convert_to_unicode(line[2])
-            examples.append(
-                InputExample(guid=guid, text_a=descrip, label=label)
-            )
-        return examples
-
-    def get_labels(self):
-        return ["0","1"]
+# class StegProcessor(DataProcessor):
+#     '''
+#     information security competition
+#     steg analysis of description
+#     '''
+#     def _read_csv(self,data_dir,file_name):
+#         with tf.gfile.Open(os.path.join(data_dir,file_name),"r") as f:
+#             reader = csv.reader(f,delimiter=",",quotechar=None)
+#             lines= []
+#             for line in reader:
+#                 # print(line)
+#                 lines.append(line)
+#         return lines
+#
+#
+#     def get_train_examples(self, data_dir):
+#         lines = self._read_csv(data_dir,"train.csv")
+#
+#         examples = []
+#         for (i,line) in enumerate(lines):
+#             guid = "train-{}".format(i)
+#             name = tokenization.convert_to_unicode(line[0])
+#             descrip = tokenization.convert_to_unicode(line[1])
+#             label = tokenization.convert_to_unicode(line[2])
+#             examples.append(
+#                 InputExample(guid=guid,text_a=descrip,label=label)
+#             )
+#         return examples
+#
+#     def get_dev_examples(self, data_dir):
+#         lines = self._read_csv(data_dir, "dev.csv")
+#
+#         examples = []
+#         for (i, line) in enumerate(lines):
+#             guid = "dev-{}".format(i)
+#             name = tokenization.convert_to_unicode(line[0])
+#             descrip = tokenization.convert_to_unicode(line[1])
+#             label = tokenization.convert_to_unicode(line[2])
+#             examples.append(
+#                 InputExample(guid=guid, text_a=descrip, label=label)
+#             )
+#         return examples
+#
+#     def get_test_examples(self, data_dir):
+#         lines = self._read_csv(data_dir, "test.csv")
+#
+#         examples = []
+#         for (i, line) in enumerate(lines):
+#             guid = "test-{}".format(i)
+#             name = tokenization.convert_to_unicode(line[0])
+#             descrip = tokenization.convert_to_unicode(line[1])
+#             label = tokenization.convert_to_unicode(line[2])
+#             examples.append(
+#                 InputExample(guid=guid, text_a=descrip, label=label)
+#             )
+#         return examples
+#
+#     def get_labels(self):
+#         return ["0","1"]
 
 
 
@@ -434,6 +457,44 @@ class ColaProcessor(DataProcessor):
       examples.append(
           InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
     return examples
+
+#TODO
+class VideoProcessor(DataProcessor):
+    """Processor for the CoLA data set (GLUE version)."""
+
+    def get_train_examples(self, data_dir):#input data dictionary wherer have train/dev/test
+        """See base class."""
+        return self._create_examples(
+            self._read_csv(os.path.join(data_dir, "train.csv")), "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            self._read_csv(os.path.join(data_dir, "dev.csv")), "dev")
+
+    def get_test_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            self._read_csv(os.path.join(data_dir, "test.csv")), "test")
+
+    def get_labels(self):
+        """See base class."""
+        return ["0", "1"]
+
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+
+        examples = []
+        for (i, line) in enumerate(lines):
+            # print(line[0])
+            guid = f"{set_type}-%d" % (int(line[0]))
+            input_type = int(FLAGS.text_mode)
+            text_a = tokenization.convert_to_unicode(line[input_type])
+            label = tokenization.convert_to_unicode(str(line[-1]))
+            examples.append(
+                InputExample(guid=guid, text_a=text_a, label=label))
+        return examples
+
 
 
 def convert_single_example(ex_index, example, label_list, max_seq_length,
@@ -751,11 +812,16 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         #         f.write(str(predictions.eval(session=sess)))
         accuracy = tf.metrics.accuracy(
             labels=label_ids, predictions=predictions, weights=is_real_example)
+        precision = tf.metrics.precision(labels=label_ids,predictions=predictions,weights=is_real_example)
+        recall = tf.metrics.recall(labels=label_ids, predictions=predictions, weights=is_real_example)
         loss = tf.metrics.mean(values=per_example_loss, weights=is_real_example)
         return {
             "eval_accuracy": accuracy,
             "eval_loss": loss,
+            "evaL_precision": precision,
+            "eval_recall": recall
         }
+
 
       eval_metrics = (metric_fn,
                       [per_example_loss, label_ids, logits, is_real_example])
@@ -854,7 +920,7 @@ def main(_):
       "mnli": MnliProcessor,
       "mrpc": MrpcProcessor,
       "xnli": XnliProcessor,
-      "steg": StegProcessor
+    'video': VideoProcessor,
   }
 
   tokenization.validate_case_matches_checkpoint(FLAGS.do_lower_case,
