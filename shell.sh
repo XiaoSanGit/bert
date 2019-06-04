@@ -7,10 +7,11 @@ python run_classifier.py \
   --task_name=video \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
   --bert_config_file=$BERT_BASE_DIR/bert_config.json \
-  --output_dir=./output/ \
-  --do_train=true \
-  --do_eval=true \
+  --output_dir=./output/total_epoch2/ \
+  --do_train=False \
+  --do_eval=False \
+  --do_predict=True \
   --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
   --train_batch_size=32 \
-  --num_train_epochs=5.0 \
-  --text_mode=2
+  --num_train_epochs=2.0 \
+  --text_mode=4
